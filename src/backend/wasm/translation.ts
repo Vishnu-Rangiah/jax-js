@@ -120,7 +120,8 @@ export function translateExp(
         cg.call(func);
         if (dtype === DType.Float64) cg.f64.promote_f32();
       };
-      if (op === AluOp.Sin) (gen(src[0]), callFuncF32(funcs.sin));
+      if (op === AluOp.BitCount) (gen(src[0]), cg.i32.popcnt());
+      else if (op === AluOp.Sin) (gen(src[0]), callFuncF32(funcs.sin));
       else if (op === AluOp.Cos) (gen(src[0]), callFuncF32(funcs.cos));
       else if (op === AluOp.Asin) (gen(src[0]), callFuncF32(funcs.asin));
       else if (op === AluOp.Atan) (gen(src[0]), callFuncF32(funcs.atan));

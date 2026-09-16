@@ -582,6 +582,7 @@ const jitRules: { [P in Primitive]: JitRule<P> } = {
   [Primitive.BitShift]: broadcastedJit(([a, b], { op }) =>
     AluExp.bitShift(a, b, op),
   ),
+  [Primitive.BitCount]: unopJit(AluExp.bitCount),
   [Primitive.Neg]: unopJit((a) => AluExp.sub(AluExp.const(a.dtype, 0), a)),
   [Primitive.Reciprocal]: unopJit(AluExp.reciprocal),
   [Primitive.Floor]: unopJit(AluExp.floor),
@@ -839,6 +840,7 @@ function splitGraphDataflow(backend: Backend, jaxpr: Jaxpr): Set<Var> {
         const nextEqn = jaxpr.eqns[usages[0]];
         switch (nextEqn.primitive) {
           // We can always fuse unary operations.
+          case Primitive.BitCount:
           case Primitive.Neg:
           case Primitive.Reciprocal:
           case Primitive.Floor:

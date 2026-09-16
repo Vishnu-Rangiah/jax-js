@@ -183,6 +183,15 @@ export class AluExp implements FpHashable {
             `BitInvert requires an integral dtype, got ${src[0].dtype}`,
           );
         break;
+      case AluOp.BitCount:
+        if (
+          dtype !== DType.Int32 ||
+          (src[0].dtype !== DType.Int32 && src[0].dtype !== DType.Uint32)
+        )
+          throw new TypeError(
+            `BitCount requires an int32 or uint32 input and int32 output, got ${src[0].dtype} -> ${dtype}`,
+          );
+        break;
     }
   }
 
@@ -206,6 +215,15 @@ export class AluExp implements FpHashable {
   }
   static max(a: AluExp, b: AluExp): AluExp {
     return new AluExp(AluOp.Max, a.dtype, [a, b]);
+  }
+  static bitCombine(a: AluExp, b: AluExp, mode: "and" | "or" | "xor"): AluExp {
+    return new AluExp(AluOp.BitCombine, a.dtype, [a, b], mode);
+  }
+  static bitShift(a: AluExp, b: AluExp, mode: "shl" | "shr"): AluExp {
+    return new AluExp(AluOp.BitShift, a.dtype, [a, b], mode);
+  }
+  static bitCount(a: AluExp): AluExp {
+    return new AluExp(AluOp.BitCount, DType.Int32, [a]);
   }
   static sin(a: AluExp): AluExp {
     return new AluExp(AluOp.Sin, a.dtype, [a]);
@@ -261,12 +279,6 @@ export class AluExp implements FpHashable {
     mode: "xor" | 0 | 1 = "xor",
   ): AluExp {
     return new AluExp(AluOp.Threefry2x32, DType.Uint32, [k0, k1, c0, c1], mode);
-  }
-  static bitCombine(a: AluExp, b: AluExp, mode: "and" | "or" | "xor"): AluExp {
-    return new AluExp(AluOp.BitCombine, a.dtype, [a, b], mode);
-  }
-  static bitShift(a: AluExp, b: AluExp, mode: "shl" | "shr"): AluExp {
-    return new AluExp(AluOp.BitShift, a.dtype, [a, b], mode);
   }
   static cmplt(a: AluExp, b: AluExp): AluExp {
     return new AluExp(AluOp.Cmplt, DType.Bool, [a, b]);
@@ -467,6 +479,10 @@ export class AluExp implements FpHashable {
           Math.max(src[0].min, src[1].min),
           Math.max(src[0].max, src[1].max),
         ];
+        break;
+
+      case AluOp.BitCount:
+        ret = [0, 32];
         break;
 
       case AluOp.Sin:
@@ -1108,6 +1124,15 @@ export class AluExp implements FpHashable {
     if (AluGroup.Unary.has(this.op)) {
       const x = this.src[0].evaluate(context, globals);
       switch (this.op) {
+        case AluOp.BitCount: {
+          let value = x >>> 0;
+          let count = 0;
+          while (value !== 0) {
+            value = (value & (value - 1)) >>> 0;
+            count++;
+          }
+          return count;
+        }
         case AluOp.Sin:
           return Math.sin(x);
         case AluOp.Cos:
@@ -1378,6 +1403,11 @@ export enum AluOp {
   Min = "Min",
   Max = "Max",
 
+  BitCombine = "BitCombine", // arg = 'or' | 'and' | 'xor'
+  BitInvert = "BitInvert",
+  BitShift = "BitShift", // arg = 'shl' | 'shr'
+  BitCount = "BitCount",
+
   Sin = "Sin",
   Cos = "Cos",
   Asin = "Asin",
@@ -1392,10 +1422,6 @@ export enum AluOp {
   Reciprocal = "Reciprocal",
   Cast = "Cast",
   Bitcast = "Bitcast",
-
-  BitCombine = "BitCombine", // arg = 'or' | 'and' | 'xor'
-  BitInvert = "BitInvert",
-  BitShift = "BitShift", // arg = 'shl' | 'shr'
 
   Cmplt = "Cmplt",
   Cmpne = "Cmpne",
@@ -1426,6 +1452,7 @@ export const AluGroup = {
     AluOp.BitShift,
   ]),
   Unary: new Set([
+    AluOp.BitCount,
     AluOp.Sin,
     AluOp.Cos,
     AluOp.Asin,
