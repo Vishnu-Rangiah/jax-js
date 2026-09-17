@@ -244,8 +244,7 @@ export class WgslExpCodegen {
         source = `inverseSqrt(${a})`;
       } else {
         const a = this.run(src[0]);
-        if (op === AluOp.BitCount) source = `i32(countOneBits(${strip1(a)}))`;
-        else if (op === AluOp.Sin) source = `sin(${strip1(a)})`;
+        if (op === AluOp.Sin) source = `sin(${strip1(a)})`;
         else if (op === AluOp.Cos) source = `cos(${strip1(a)})`;
         else if (op === AluOp.Asin) source = `asin(${strip1(a)})`;
         else if (op === AluOp.Atan) source = `atan(${strip1(a)})`;
@@ -280,6 +279,8 @@ export class WgslExpCodegen {
           }
         } else if (op === AluOp.Bitcast)
           source = `bitcast<${dtypeToWgsl(dtype)}>(${strip1(a)})`;
+        else if (op === AluOp.BitCount)
+          source = `i32(countOneBits(${strip1(a)}))`;
       }
     } else if (op === AluOp.Where) {
       // select(f, t, cond) -> cond ? t : f

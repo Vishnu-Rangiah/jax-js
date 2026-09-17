@@ -177,12 +177,6 @@ export class AluExp implements FpHashable {
             `BitShift[${arg}] requires two integral, non-bool dtypes, got ${src[0].dtype} and ${src[1].dtype}`,
           );
         break;
-      case AluOp.BitInvert:
-        if (isFloatDtype(src[0].dtype))
-          throw new TypeError(
-            `BitInvert requires an integral dtype, got ${src[0].dtype}`,
-          );
-        break;
       case AluOp.BitCount:
         if (
           dtype !== DType.Int32 ||
@@ -482,7 +476,8 @@ export class AluExp implements FpHashable {
         break;
 
       case AluOp.BitCount:
-        ret = [0, 32];
+        if (src[0].dtype === DType.Bool) ret = [0, 1];
+        else ret = [0, 8 * byteWidth(src[0].dtype)];
         break;
 
       case AluOp.Sin:
@@ -1403,11 +1398,6 @@ export enum AluOp {
   Min = "Min",
   Max = "Max",
 
-  BitCombine = "BitCombine", // arg = 'or' | 'and' | 'xor'
-  BitInvert = "BitInvert",
-  BitShift = "BitShift", // arg = 'shl' | 'shr'
-  BitCount = "BitCount",
-
   Sin = "Sin",
   Cos = "Cos",
   Asin = "Asin",
@@ -1422,6 +1412,10 @@ export enum AluOp {
   Reciprocal = "Reciprocal",
   Cast = "Cast",
   Bitcast = "Bitcast",
+
+  BitCombine = "BitCombine", // arg = 'or' | 'and' | 'xor'
+  BitShift = "BitShift", // arg = 'shl' | 'shr'
+  BitCount = "BitCount",
 
   Cmplt = "Cmplt",
   Cmpne = "Cmpne",
@@ -1452,7 +1446,6 @@ export const AluGroup = {
     AluOp.BitShift,
   ]),
   Unary: new Set([
-    AluOp.BitCount,
     AluOp.Sin,
     AluOp.Cos,
     AluOp.Asin,
@@ -1467,6 +1460,7 @@ export const AluGroup = {
     AluOp.Reciprocal,
     AluOp.Cast,
     AluOp.Bitcast,
+    AluOp.BitCount,
   ]),
   Compare: new Set([AluOp.Cmplt, AluOp.Cmpne]),
   Variable: new Set([
